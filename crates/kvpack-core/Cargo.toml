@@ -1,0 +1,26 @@
+[package]
+name = "kvpack-core"
+version.workspace = true
+description = "Pure in-memory wire codec for the pack-v1 durable KV-cache store"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+readme.workspace = true
+keywords.workspace = true
+repository.workspace = true
+documentation = "https://docs.rs/kvpack-core"
+
+[dependencies]
+sha2.workspace = true
+hmac.workspace = true
+hkdf.workspace = true
+chacha20poly1305.workspace = true
+zeroize.workspace = true
+getrandom.workspace = true
+serde.workspace = true
+
+[dev-dependencies]
+proptest = "=1.11.0"
+serde_json.workspace = true
+sha2.workspace = true

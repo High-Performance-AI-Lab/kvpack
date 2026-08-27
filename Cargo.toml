@@ -1,0 +1,68 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/kvpack-core",
+    "crates/kvpack",
+    "crates/kvpack-handoff",
+]
+exclude = ["fuzz"]
+
+[workspace.package]
+version = "0.1.0-alpha.2"
+edition = "2021"
+rust-version = "1.85"
+license = "MIT OR Apache-2.0"
+authors = ["kvpack contributors"]
+readme = "README.md"
+keywords = ["llm", "kv-cache", "cache", "inference"]
+repository = "https://github.com/High-Performance-AI-Lab/kvpack"
+homepage = "https://github.com/High-Performance-AI-Lab/kvpack"
+
+[workspace.dependencies]
+# `asm` enables the ARMv8 SHA-256 intrinsics backend on aarch64 (runtime-
+# gated via cpufeatures; guaranteed present on Apple Silicon) — measured
+# ~5x per-core hash throughput vs the software backend. x86_64 already
+# runtime-detects SHA-NI without this feature.
+sha2 = { version = "=0.10.9", features = ["asm"] }
+hmac = "=0.12.1"
+hex = "=0.4.3"
+# At-rest encryption: audited RustCrypto AEAD + HKDF, aligned with the
+# sha2/hmac 0.10/0.12 generation already in the tree. Ciphers are never
+# hand-rolled — only the envelope *framing* is (like the rest of the wire).
+chacha20poly1305 = "=0.10.1"
+hkdf = "=0.12.4"
+rustix = { version = "=1.1.4", features = ["event", "fs", "net", "process"] }
+getrandom = "=0.3.4"
+tempfile = "=3.27.0"
+zeroize = { version = "=1.9.0", features = ["zeroize_derive"] }
+rusqlite = { version = "=0.32.1", features = ["backup", "bundled"] }
+tokio = { version = "=1.53.1", features = ["fs", "io-util", "macros", "net", "rt-multi-thread", "signal", "sync", "time"] }
+prost = "=0.13.5"
+bytes = "=1.12.1"
+libc = "=0.2.189"
+rustls = { version = "=0.23.42", default-features = false, features = ["ring", "std"] }
+rustls-pemfile = "=2.2.0"
+tokio-rustls = "=0.26.4"
+hyper = { version = "=1.11.0", features = ["client", "http2", "server"] }
+hyper-util = { version = "=0.1.20", features = ["server", "tokio"] }
+http-body-util = "=0.1.4"
+rcgen = "=0.13.2"
+time = "=0.3.47"
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = "=1.0.149"
+thiserror = "=2.0.18"
+toml = "=0.8.23"
+
+# SHA-256 in unoptimized builds is 50-100x slower; this keeps the full
+# 49k-mutation conformance sweeps at seconds per CI run.
+[profile.test]
+opt-level = 2
+
+[profile.dev.package.sha2]
+opt-level = 2
+
+# Test targets use profile.test, but their dependency graph (including the
+# core crate under test) builds with profile.dev — keep the codec fast there
+# so the exhaustive sweeps stay at seconds.
+[profile.dev.package.kvpack-core]
+opt-level = 2

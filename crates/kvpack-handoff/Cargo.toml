@@ -1,0 +1,32 @@
+[package]
+name = "kvpack-handoff"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+readme.workspace = true
+keywords.workspace = true
+repository.workspace = true
+homepage.workspace = true
+description = "Fail-closed live KV handoff framing and sealed bundle format"
+documentation = "https://docs.rs/kvpack-handoff"
+
+[features]
+default = []
+receiver = ["dep:rustls", "dep:rustls-pemfile"]
+
+[dependencies]
+hex.workspace = true
+hmac.workspace = true
+rustix.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+zeroize.workspace = true
+rustls = { workspace = true, optional = true }
+rustls-pemfile = { workspace = true, optional = true }
+
+[dev-dependencies]
+tempfile.workspace = true

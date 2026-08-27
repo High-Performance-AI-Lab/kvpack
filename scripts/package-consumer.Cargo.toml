@@ -1,0 +1,10 @@
+[package]
+name = "kvpack-draft-registry-consumer"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+kvpack-core = "=0.1.0-alpha.2"
+kvpack = "=0.1.0-alpha.2"
+kvpack-handoff = "=0.1.0-alpha.2"
