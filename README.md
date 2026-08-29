@@ -22,6 +22,43 @@ concurrency, security, and explicit non-features.
 
 ## How it works
 
+The lifecycle has two fail-closed paths: durable publication on the first
+execution, then authenticated exact-prefix replay on a later execution.
+
+```mermaid
+sequenceDiagram
+    accTitle: kvpack publication and replay lifecycle
+    accDescr: An inference engine publishes authenticated state, then restores the longest exact compatible prefix into shadow state before atomic installation.
+    autonumber
+    participant E as Inference engine + adapter
+    participant K as kvpack
+    participant S as Immutable objects + catalog
+
+    Note over E,S: First execution: publish a reusable prefix
+    E->>K: Exact token IDs, compatibility identity, and complete state inventory
+    K->>S: Authenticate and stage immutable chunks
+    K->>S: fsync, then publish without overwrite
+    K->>S: Commit manifest and exact-prefix index atomically
+
+    Note over E,S: Later execution: restore or recompute
+    E->>K: Request token IDs and compatibility identity
+    K->>S: Find the longest exact-prefix candidate
+    S-->>K: Manifest chain and immutable chunks
+    K->>K: Verify identity, chain, chunks, and resource limits
+    alt Valid exact-prefix candidate
+        K->>E: Verify and scatter bytes into engine-invisible shadow state
+        alt Complete restore succeeds
+            E->>E: Install atomically and compute only the uncached suffix
+        else Restore or installation fails
+            K-->>E: Abort or reset so no partial state remains live
+            E->>E: Prefill normally
+        end
+    else No valid exact prefix
+        K-->>E: Cache miss without mutating live state
+        E->>E: Prefill normally
+    end
+```
+
 1. An engine adapter describes its live state and supplies the exact token IDs
    that produced it.
 2. kvpack binds that state to the model, revision, quantization, adapter,
