@@ -167,14 +167,28 @@ partition namespaces by host or provide external cross-host coordination.
 
 ### Rust
 
-Implement [`CacheEngineBackend`](crates/kvpack/src/adapter.rs). The
-`ExactCacheCoordinator` drives synchronized export, checks identity and the
-complete descriptor sequence before touching engine buffers, and enforces
-abort-plus-reset on restore failure.
+Use the production-v1 store surface exported by
+[`crates/kvpack/src/lib.rs`](crates/kvpack/src/lib.rs):
 
-[`PackExportSink` and `PackRestoreSource`](crates/kvpack/src/bridge.rs) connect
-that contract to pack files. The lower-level `PackSink` and `PackReader` APIs
-are also available when an engine needs to own more of the lifecycle.
+1. Describe the exact token IDs, semantic identity, representation family, and
+   complete state inventory in an `ExportDeclaration`.
+2. Stream the canonical state planes through `ExportSession` and publish them
+   with its terminal `commit`.
+3. Ask `LocalStore::restore_candidates` for the longest compatible exact-token
+   prefix and authenticate the selected candidate with
+   `AuthenticatedRestorePlan`.
+4. Implement `VerifiedRestoreSink` so verified writes remain engine-invisible
+   until `commit_restore`; abort or reset on every failed path.
+
+Production-v1 state streams are fixed-width and token-indexed. An engine's
+composite session/checkpoint blob is not automatically a valid state plane;
+expose logical planes or add an explicit versioned artifact surface instead of
+disguising the blob as a tensor.
+
+The repository includes an agent-facing
+[`kvpack-engine-integration` skill](skills/kvpack-engine-integration/SKILL.md)
+with the full integration contract and concrete guides for llama.cpp and
+DwarfStar.
 
 ### Live handoff
 
@@ -228,8 +242,8 @@ manual candidate gates are recorded in [`docs/RELEASE.md`](docs/RELEASE.md).
 ## Repository layout
 
 - `crates/kvpack-core` — pure in-memory pack-v1 codec with no file I/O.
-- `crates/kvpack` — store, adapter contract, pack bridge, reader/writer,
-  publication, admission, encryption, and operational controls.
+- `crates/kvpack` — production export/restore sessions, authenticated local
+  store, publication, admission, encryption, and operational controls.
 - `crates/kvpack-handoff` — authenticated live-KV framing, verification, and
   sealed bundle handling.
 - `reference/python/` — stdlib-only Python reference implementation.
