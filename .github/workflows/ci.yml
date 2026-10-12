@@ -1,0 +1,64 @@
+name: public-ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_BUILD_JOBS: 2
+
+jobs:
+  rust-tests:
+    name: Rust tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-26]
+    steps:
+      - name: Checkout kvpack
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Install pinned Rust toolchain
+        run: rustup toolchain install 1.93.1 --profile minimal --component clippy --component rustfmt
+      - name: Allow the receiver's 8 MiB socket buffers on the runner
+        if: runner.os == 'Linux'
+        shell: bash
+        run: sudo sysctl -w net.core.rmem_max=8388608 net.core.wmem_max=8388608
+      - name: Test all workspace features, including the TLS receiver
+        if: runner.os == 'Linux'
+        run: cargo +1.93.1 test --workspace --all-features --locked -- --test-threads=2
+      - name: Test the native macOS workspace
+        if: runner.os == 'macOS'
+        run: cargo +1.93.1 test --workspace --locked -- --test-threads=2
+      # The 7 GB Apple Silicon runner caps sockets at 6 MiB. The full
+      # 8 MiB transport contract is exercised on Linux; the changed TLS
+      # identity parser is also tested with the receiver enabled on macOS.
+      - name: Test the TLS receiver identity parser on native macOS
+        if: runner.os == 'macOS'
+        run: cargo +1.93.1 test -p kvpack-handoff --features receiver --locked receiver::tls::tests
+      - name: Deny warnings across workspace targets
+        run: cargo +1.93.1 clippy --workspace --all-targets --all-features --locked -- -D warnings
+      - name: Check formatting
+        run: cargo +1.93.1 fmt --all --check
+
+  rustsec:
+    name: Rust dependency advisories
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout kvpack
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Install pinned Rust toolchain
+        run: rustup toolchain install 1.93.1 --profile minimal
+      - name: Install cargo-audit
+        run: cargo +1.93.1 install cargo-audit --version 0.22.2 --locked
+      - name: Deny vulnerabilities, warnings, and yanked dependencies
+        run: cargo +1.93.1 audit --deny warnings

@@ -1,0 +1,6 @@
+/target
+fuzz/target/
+fuzz/artifacts/
+__pycache__/
+/results/
+runs/

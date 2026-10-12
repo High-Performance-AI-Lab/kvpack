@@ -1,0 +1,49 @@
+[package]
+name = "kvpack"
+version.workspace = true
+description = "Crash-safe, bitwise-exact durable store for LLM inference state"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+readme.workspace = true
+keywords.workspace = true
+repository.workspace = true
+documentation = "https://docs.rs/kvpack"
+autotests = false
+autoexamples = false
+
+[dependencies]
+kvpack-core = { version = "=0.1.0-alpha.2", path = "../kvpack-core" }
+sha2.workspace = true
+hmac.workspace = true
+chacha20poly1305.workspace = true
+hkdf.workspace = true
+rustix.workspace = true
+getrandom.workspace = true
+zeroize.workspace = true
+rusqlite.workspace = true
+prost.workspace = true
+libc.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+proptest = "=1.11.0"
+
+[[test]]
+name = "store_safety"
+path = "tests/store_safety.rs"
+
+[[test]]
+name = "cache_policy"
+path = "tests/cache_policy.rs"
+
+[[test]]
+name = "cache_oracle"
+path = "tests/cache_oracle.rs"
+
+[[test]]
+name = "store_model"
+path = "tests/store_model.rs"

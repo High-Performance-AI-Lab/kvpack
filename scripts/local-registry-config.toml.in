@@ -1,0 +1,9 @@
+[source.crates-io]
+registry = "sparse+https://index.crates.io/"
+replace-with = "kvpack-draft-registry"
+
+[source.kvpack-draft-registry]
+local-registry = "@REGISTRY@"
+
+[net]
+offline = true

@@ -1,0 +1,6 @@
+[patch.crates-io]
+kvpack-core = { path = "crates/kvpack-core" }
+kvpack = { path = "crates/kvpack" }
+
+[net]
+git-fetch-with-cli = true
